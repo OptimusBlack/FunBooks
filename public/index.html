@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>FunBooks</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="/javascripts/externalJS.js"></script>
+</head>
+
+<body ng-app="funbooksApp" ng-controller="funbooksController" ng-init='getBooks("nil", 1)'>
+    <div class="categoriesList">
+        <h3 class="headingCategories" ng-hide="bookSelected == true || signinClicked == true || loadCartClicked == true || checkoutClicked == true || showSignoutpage == true" >CATEGORIES</h3>
+        <p ng-repeat="category in bookCategories" class="categoryEntries" ng-click="getBooks(category,1)" ng-hide="loadCartClicked == true || bookSelected == true || signinClicked == true || checkoutClicked == true || showSignoutpage == true" >{{category}}</p>
+    </div>
+<div class="headerDiv">
+    <table style="width: 100%">
+        <td style="padding-bottom: 0px; padding-left: 8px; width: 35%">
+            <button class="signInButton" ng-show='username == "" && signinClicked == false' ng-click="handleSignInClick()">Sign In</button>
+            <table>
+                <tr>
+                    <td>
+                        <p ng-hide='username == ""' style="font-size: 20px">Hello, {{username}}</p>
+                    </td>
+                    <td style="padding-left: 16px">
+                        <button ng-show='signinClicked == false && username != ""' class="signInButton" ng-click="handleSignoutClick()">Sign out</button>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style="width: 30%">
+            <h1>FunBooks</h1>
+        </td>
+        <td style="padding-bottom: 0px; padding-right: 16px; width: 35%; text-align: right;">
+            <p ng-hide="booksInCart == -1" style="font-size: 20px" ng-click="loadCart()">{{booksInCart}} in Cart</p>
+        </td>
+    </table>
+</div>
+
+<div>
+    <div class="allBooksDiv">
+        <table style="width: 100%" ng-show="bookSelected == false && signinClicked == false && loadCartClicked == false && checkoutClicked == false && showSignoutpage == false" >
+            <tr style="width: 100%">
+                <td ng-repeat="book in books | limitTo: 2" id={{book._id}} style="width: 50%" ng-click="loadBook(book._id)" >
+                    <img src={{book.coverImage}}>
+                    <p><b>Title: </b>{{book.title}}</p>
+                    <p><b>Authors: </b>{{authorListing(book.authorList)}}</p>
+                    <p><b>Price: </b>{{book.price}}</p>
+                </td>
+            </tr>
+            <tr style="width: 100%">
+                <td ng-repeat="book in books | limitTo: 2 : 2" id={{book._id}} style="width: 50%" ng-click="loadBook(book._id)" >
+                    <img src={{book.coverImage}}>
+                    <p><b>Title: </b>{{book.title}}</p>
+                    <p><b>Authors: </b>{{authorListing(book.authorList)}}</p>
+                    <p><b>Price: </b>{{book.price}}</p>
+                </td>
+            </tr>
+        </table>
+
+        <table style="width: 100%" ng-show="bookSelected == true && signinClicked == false && loadCartClicked == false && checkoutClicked == false && showSignoutpage == false" >
+            <tr style="width: 100%" >
+                <td style="width: 30%" >
+                    <img src={{selectedBookData.coverImage}}>
+                </td>
+                <td style="width: 40%" ng-show="addToCartClicked == false">
+                    <p><b>Title: </b>{{selectedBookData.title}}</p>
+                    <p><b>Authors: </b>{{authorListing(selectedBookData.authorList)}}</p>
+                    <p><b>Price: </b>{{selectedBookData.price}}</p>
+                    <p><b>Publisher: </b>{{selectedBookData.publisher}}</p>
+                    <p><b>Publishing date: </b>{{selectedBookData.date}}</p>
+                    <p><b>description: </b>{{selectedBookData.description}}</p>
+                </td>
+                <td style="width: 30%; border: 3px solid #3e4444; padding: 15px" ng-show="addToCartClicked == false">
+                    <div style="text-align: center">
+                        <b>Quantity: </b><input type="text" ng-model="addToCartQuantity" class="inputUnamePsw" style="width: 100%"><br>
+                        <button class="signInButton" style="width: 100%" ng-click="addToCart()">Add to cart</button>
+                    </div>
+                </td>
+                <td ng-show="addToCartClicked == true" style="width: 70%">
+                    <p>Added to Cart!</p>
+                    <p>Cart subtotal ({{booksInCart}} item(s)): ${{addToCartTotalPrice}}</p>
+                </td> 
+            </tr>
+        </table>
+
+        <div class="signInDiv" ng-show="signinClicked == true">
+            <p style="font-size: 20px">{{signInResponse}}</p>
+            <label for="uname"><b>Username</b></label><br> 
+            <input ng-model="signinUsernameEntered" type="text" name="uname" class="inputUnamePsw" placeholder="Enter Username"><br>
+            <label for="psw"><b>Password</b></label><br>
+            <input type="password" ng-model="signinPasswordEntered" name="psw" class="inputUnamePsw" placeholder="Enter Password">
+            <button class="signInButton2" ng-click="signin()">Sign In</button>
+        </div>
+
+        <table style="width: 100%" ng-show="loadCartClicked == true && showSignoutpage == false">
+            <tr style="text-align: left;">
+                <th colspan="2" style="font-size: 40px">Shopping cart</th>
+                <th>Price:</th>
+                <th>Quantity:</th>
+            </tr>
+            <tr ng-repeat="book in booksInCartData" style="width: 100%">
+                <td style="width: 25%"><img src={{book.coverImage}}></td>
+                <td style="width: 40%">
+                    <p>{{book.title}}</p>
+                    <p>{{authorListing(book.authorList)}}</p>
+                </td>
+                <td style="width: 10%">
+                    {{'$'+book.price}}
+                </td>
+                <td style="width: 25%">
+                    <select ng-change="updateCart(book.bookId, updateCartSelectValue)" ng-model="updateCartSelectValue">
+                        <option value="" hidden>{{book.quantity}}</option>
+                        <option value={{i}} ng-repeat="i in updateCartSelectOptions">{{i}}</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+
+        <div ng-show="checkoutClicked == true" style="text-align: center">
+            <p>You have successfully placed order for {{checkoutFinalNumItems}} item(s)</p>
+            <p><b>${{checkoutFinalAmount}}</b></p>
+        </div>
+
+        <div ng-show="showSignoutpage == true" style="text-align: center">
+            <p>You still have <b>{{booksInCart}} item(s)</b> in your cart</p>
+            <button class="signInButton" ng-click="cancelSignout()">Cancel sign-out</button>
+            <button class="signInButton" ng-click="signoutConfirm()">Confirm sign-out</button>
+        </div>
+    </div>
+
+    <div class="pageNavDiv">
+        <table style="width: 100%" ng-show="bookSelected == false && signinClicked == false && loadCartClicked == false && checkoutClicked == false && showSignoutpage == false">
+            <td style="padding-bottom: 0px; padding-left: 16px; width: 35%">
+                <p ng-click="handlePreviousPage()">< Previous page</p>
+            </td>
+            <td style="width: 30%">
+                <p style="text-align: center">
+                    page
+                    <select ng-model="currentPage" ng-change="getBooks(currentCategory, currentPage)">
+                        <option value={{i}} ng-repeat="i in totalPages">{{i}}</option>
+                    </select>
+                    of {{totalPages.length}}
+                </p>
+            </td>
+            <td style="padding-bottom: 0px; padding-right: 16px; width: 35%">
+                <p align="right" ng-click="handleNextPage()">Next page ></p>
+            </td>
+        </table>
+    
+        <p align="center" ng-click="goBackBookSelected()" ng-show="bookSelected == true && signinClicked == false && addToCartClicked == false && loadCartClicked == false && showSignoutpage == false && checkoutClicked == false">< go back</p>
+        <p align="center" ng-click="goBackSignIn()" ng-show="signinClicked == true">< go back</p>
+        <p align="center" ng-click="continueBrowsing()" ng-show="addToCartClicked == true && signinClicked == false && loadCartClicked == false && showSignoutpage == false && checkoutClicked == false">Continue browsing ></p>
+        <div style="text-align: center" ng-show="loadCartClicked == true && showSignoutpage == false">
+            <p>Cart subtotal ({{booksInCart}} item(s)): <b>${{loadCartTotalPrice}}</b></p>
+            <button class="signInButton" ng-click="proceedToCheckOut()">Proceed to check out</button>
+        </div>
+        <p align="center" ng-click="continueBrowsingCheckout()" ng-show="checkoutClicked == true">Continue browsing ></p>
+    </div>
+</div>
+</body>
+
+</html>
